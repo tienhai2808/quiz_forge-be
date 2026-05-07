@@ -1,21 +1,40 @@
+using Microsoft.EntityFrameworkCore;
+using QuizForge.Data;
+using QuizForge.DTOs;
+using QuizForge.Extensions;
+using QuizForge.Middleware;
+using QuizForge.Providers;
+using QuizForge.Repositories;
+using QuizForge.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddApiControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddJwtAuth(builder.Configuration);
+builder.Services.AddAppCors(builder.Configuration);
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("Default"),
+        npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history")));
+builder.Services.AddSnowflakeIdGenerator(builder.Configuration);
+builder.Services.AddHttpClient<IGoogleProvider, GoogleProvider>();
+builder.Services.AddScoped<IJwtProvider, JwtProvider>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
-
+app.UseAppCors();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
