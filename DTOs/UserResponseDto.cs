@@ -4,6 +4,6 @@ public sealed record UserResponseDto(
     string Id,
     string Email,
     string Name,
-    string AvatarUrl,
+    string? AvatarUrl,
     DateTime CreatedAt
 );

@@ -23,9 +23,27 @@ public class RefreshTokenRepository(AppDbContext db) : IRefreshTokenRepository
             cancellationToken
         );
 
-    public async Task DeleteAsync(RefreshToken refreshToken, CancellationToken cancellationToken = default)
-    {
-        _db.RefreshTokens.Remove(refreshToken);
-        await _db.SaveChangesAsync(cancellationToken);
-    }
+    public Task<int> DeleteActiveByTokenAndUserIdAsync(
+        string token,
+        long userId,
+        CancellationToken cancellationToken = default
+    )
+        => _db.RefreshTokens
+            .Where(x => x.Token == token && x.UserId == userId && x.ExpiresAt >= DateTime.UtcNow)
+            .ExecuteDeleteAsync(cancellationToken);
+
+    public Task<int> RotateActiveAsync(
+        string currentToken,
+        string newToken,
+        DateTime newExpiresAtUtc,
+        CancellationToken cancellationToken = default
+    )
+        => _db.RefreshTokens
+            .Where(x => x.Token == currentToken && x.ExpiresAt >= DateTime.UtcNow)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(x => x.Token, newToken)
+                    .SetProperty(x => x.ExpiresAt, newExpiresAtUtc),
+                cancellationToken
+            );
 }

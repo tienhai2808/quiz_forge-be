@@ -15,6 +15,7 @@ public static class CorsExtensions
             options.AddPolicy(FrontendCorsPolicy, policy =>
                 policy
                     .WithOrigins(allowedOrigins)
+                    .AllowCredentials()
                     .AllowAnyHeader()
                     .AllowAnyMethod());
         });
