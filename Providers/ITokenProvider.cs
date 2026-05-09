@@ -1,6 +1,6 @@
 namespace QuizForge.Providers;
 
-public interface IJwtProvider
+public interface ITokenProvider
 {
     string GenerateAccessToken(long userID);
 }

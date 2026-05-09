@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using QuizForge.Data;
-using QuizForge.DTOs;
 using QuizForge.Extensions;
 using QuizForge.Middleware;
 using QuizForge.Providers;
@@ -18,11 +17,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration.GetConnectionString("Default"),
         npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history")));
 builder.Services.AddSnowflakeIdGenerator(builder.Configuration);
-builder.Services.AddHttpClient<IGoogleProvider, GoogleProvider>();
-builder.Services.AddScoped<IJwtProvider, JwtProvider>();
+builder.Services.AddHttpClient<IOAuthProvider, GoogleOAuthProvider>();
+builder.Services.AddScoped<IStorageProvider, GcsProvider>();
+builder.Services.AddScoped<ITokenProvider, JwtProvider>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IFileService, FileService>();
 
 var app = builder.Build();
 

@@ -6,13 +6,13 @@ using QuizForge.Exceptions;
 
 namespace QuizForge.Providers;
 
-public class JwtProvider(IConfiguration configuration) : IJwtProvider
+public class JwtProvider(IConfiguration configuration) : ITokenProvider
 {
     private readonly IConfiguration _configuration = configuration;
 
     public string GenerateAccessToken(long userID)
     {
-        var signingKey = _configuration.GetValue("Jwt:SigningKey", "84bfad12-f6d2-4eaf-a00d-fc28fb7759cf");
+        var signingKey = _configuration.GetValue("Jwt:SigningKey", "quiz-forge-random-string");
         var issuer = _configuration.GetValue("Jwt:Issuer", "QuizForge");
         var audience = _configuration.GetValue("Jwt:Audience", "QuizForgeClient");
         var expiresMinutes = _configuration.GetValue("Jwt:AccessTokenExpiresMinutes", 30);

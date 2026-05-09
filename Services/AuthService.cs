@@ -12,18 +12,16 @@ namespace QuizForge.Services;
 
 public class AuthService(
     IConfiguration configuration,
-    ILogger<AuthService> logger,
     IIdGenerator<long> idGenerator,
-    IGoogleProvider googleProvider,
-    IJwtProvider jwtProvider,
+    IOAuthProvider oAuthProvider,
+    ITokenProvider tokenProvider,
     IUserRepository userRepository,
     IRefreshTokenRepository refreshTokenRepository
 ) : IAuthService
 {
-    private readonly ILogger<AuthService> _logger = logger;
     private readonly IIdGenerator<long> _idGenerator = idGenerator;
-    private readonly IGoogleProvider _googleProvider = googleProvider;
-    private readonly IJwtProvider _jwtProvider = jwtProvider;
+    private readonly IOAuthProvider _oAuthProvider = oAuthProvider;
+    private readonly ITokenProvider _tokenProvider = tokenProvider;
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository = refreshTokenRepository;
     private readonly int _refreshExpiresInDays = configuration.GetValue("Token:RefreshTokenExpiresDays", 7);
@@ -33,13 +31,13 @@ public class AuthService(
         CancellationToken cancellationToken = default
     )
     {
-        var tokenResponse = await _googleProvider.ExchangeCodeAsync(
+        var tokenResponse = await _oAuthProvider.ExchangeCodeAsync(
             dto.Code,
             dto.RedirectUri,
             cancellationToken
         );
 
-        var userResponse = await _googleProvider.GetUserInfoAsync(
+        var userResponse = await _oAuthProvider.GetUserInfoAsync(
             tokenResponse.AccessToken,
             cancellationToken
         );
@@ -64,7 +62,7 @@ public class AuthService(
             await _userRepository.UpdateAsync(user, cancellationToken);
         }
 
-        var accessToken = _jwtProvider.GenerateAccessToken(user.Id);
+        var accessToken = _tokenProvider.GenerateAccessToken(user.Id);
         var refreshToken = GenerateRefreshToken();
         var refreshTokenRecord = new RefreshToken
         {
@@ -98,7 +96,6 @@ public class AuthService(
             userId,
             cancellationToken
         );
-        _logger.LogDebug("Deleted {DeletedRows} refresh token rows for user {UserId}", deletedRows, userId);
     }
 
     public async Task<(string, string)> RefreshTokenAsync(
@@ -116,7 +113,7 @@ public class AuthService(
         var user = await _userRepository.FindByIdAsync(refreshTokenRecord.UserId, cancellationToken) ?? 
             throw new UnauthorizedException("Refresh token không hợp lệ");
         
-        var accessToken = _jwtProvider.GenerateAccessToken(user.Id);
+        var accessToken = _tokenProvider.GenerateAccessToken(user.Id);
         var newRefreshToken = GenerateRefreshToken();
         var rotatedRows = await _refreshTokenRepository.RotateActiveAsync(
             refreshTokenHash,

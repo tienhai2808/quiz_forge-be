@@ -5,10 +5,10 @@ using QuizForge.Exceptions;
 
 namespace QuizForge.Providers;
 
-public class GoogleProvider(
+public class GoogleOAuthProvider(
     HttpClient httpClient,
     IConfiguration configuration
-) : IGoogleProvider
+) : IOAuthProvider
 {
     private readonly HttpClient _httpClient = httpClient;
     private readonly string _clientId = configuration.GetValue("GoogleAuth:ClientId", string.Empty);
@@ -23,7 +23,7 @@ public class GoogleProvider(
             : [];
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public async Task<GoogleTokenResponseDto> ExchangeCodeAsync(
+    public async Task<OAuthTokenDto> ExchangeCodeAsync(
         string code,
         string redirectUri,
         CancellationToken cancellationToken = default
@@ -51,14 +51,14 @@ public class GoogleProvider(
         if (!response.IsSuccessStatusCode)
             throw new UnauthorizedException("Google authorization code không hợp lệ hoặc đã hết hạn");
 
-        var tokenResponse = JsonSerializer.Deserialize<GoogleTokenResponseDto>(responseContent, JsonOptions);
+        var tokenResponse = JsonSerializer.Deserialize<OAuthTokenDto>(responseContent, JsonOptions);
         if (tokenResponse is null || string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
             throw new ExternalServiceException("Không thể đọc token response từ Google");
 
         return tokenResponse;
     }
 
-    public async Task<GoogleUserInfoDto> GetUserInfoAsync(
+    public async Task<OAuthUserDto> GetUserInfoAsync(
         string accessToken,
         CancellationToken cancellationToken = default
     )
@@ -72,7 +72,7 @@ public class GoogleProvider(
         if (!response.IsSuccessStatusCode)
             throw new UnauthorizedException("Google access token không hợp lệ");
 
-        var userInfo = JsonSerializer.Deserialize<GoogleUserInfoDto>(responseContent, JsonOptions);
+        var userInfo = JsonSerializer.Deserialize<OAuthUserDto>(responseContent, JsonOptions);
         if (userInfo is null || string.IsNullOrWhiteSpace(userInfo.Sub))
             throw new ExternalServiceException("Không thể đọc thông tin người dùng từ Google");
 

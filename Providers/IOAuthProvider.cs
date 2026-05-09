@@ -2,15 +2,15 @@ using QuizForge.DTOs;
 
 namespace QuizForge.Providers;
 
-public interface IGoogleProvider
+public interface IOAuthProvider
 {
-    Task<GoogleTokenResponseDto> ExchangeCodeAsync(
+    Task<OAuthTokenDto> ExchangeCodeAsync(
         string code,
         string redirectUri,
         CancellationToken cancellationToken = default
     );
 
-    Task<GoogleUserInfoDto> GetUserInfoAsync(
+    Task<OAuthUserDto> GetUserInfoAsync(
         string accessToken,
         CancellationToken cancellationToken = default
     );

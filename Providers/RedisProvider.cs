@@ -1,6 +1,6 @@
 namespace QuizForge.Providers;
 
-public class RedisProvider : IRedisProvider
+public class RedisProvider : ICacheProvider
 {
     
 }

@@ -1,4 +1,9 @@
-.PHONY: github
+GCS_KEY_PATH := Configs/gcs.json
+
+.PHONY: github run
+
+run:
+	@GOOGLE_APPLICATION_CREDENTIALS=$(GCS_KEY_PATH) dotnet run
 
 github:
 	@if [ -z "$(CM)" ]; then \

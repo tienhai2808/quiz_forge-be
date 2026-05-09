@@ -1,6 +1,15 @@
 @QuizForge_HostAddress = http://localhost:5059
 
-GET {{QuizForge_HostAddress}}/weatherforecast/
-Accept: application/json
+POST {{QuizForge_HostAddress}}/files/presigned-urls/uploads
+Content-Type: application/json
+
+{
+  "files": [
+    {
+      "fileName": "pedri_1.jpg",
+      "contentType": "image/jpg"
+    }
+  ]
+}
 
 ###
