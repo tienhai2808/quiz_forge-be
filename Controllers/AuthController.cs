@@ -2,9 +2,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using QuizForge.Constants;
+using Microsoft.Extensions.Options;
+using QuizForge.Common;
 using QuizForge.DTOs;
 using QuizForge.Exceptions;
+using QuizForge.Options;
 using QuizForge.Services;
 
 namespace QuizForge.Controllers;
@@ -12,15 +14,16 @@ namespace QuizForge.Controllers;
 [ApiController]
 [Route("auth")]
 public class AuthController(
-    IConfiguration configuration,
+    IOptions<JwtOptions> jwtOptions,
+    IOptions<TokenOptions> tokenOptions,
     IAuthService authService, 
     IWebHostEnvironment environment
 ) : ControllerBase
 {
     private readonly IAuthService _authService = authService;
     private readonly IWebHostEnvironment _environment = environment;
-    private readonly int _accessExpiresInMinutes = configuration.GetValue("Jwt:AccessTokenExpiresMinutes", 30);
-    private readonly int _refreshExpiresInDays = configuration.GetValue("Token:RefreshTokenExpiresDays", 7);
+    private readonly int _accessExpiresInMinutes = jwtOptions.Value.AccessTokenExpiresMinutes;
+    private readonly int _refreshExpiresInDays = tokenOptions.Value.RefreshTokenExpiresDays;
 
     [HttpPost("google")]
     public async Task<IActionResult> GoogleLogin(
@@ -39,10 +42,7 @@ public class AuthController(
     [HttpGet("userinfo")]
     public async Task<IActionResult> UserInfo(CancellationToken cancellationToken)
     {
-        var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
-            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!long.TryParse(sub, out var userId))
-            throw new UnauthorizedException("Access token không hợp lệ");
+        var userId = GetCurrentUserId();
 
         var userRes = await _authService.UserInfoAsync(userId, cancellationToken);
         var response = ApiResponseDto<UserResponseDto>.Success(userRes);
@@ -55,8 +55,7 @@ public class AuthController(
     )
     {
         var userId = GetCurrentUserId();
-
-        if (Request.Cookies.TryGetValue(AuthConstants.RefreshToken, out var refreshToken) &&
+        if (Request.Cookies.TryGetValue(Constants.RefreshToken, out var refreshToken) &&
             !string.IsNullOrWhiteSpace(refreshToken))
         {
             await _authService.LogoutAsync(userId, refreshToken, cancellationToken);
@@ -73,7 +72,7 @@ public class AuthController(
         CancellationToken cancellationToken
     )
     {
-        if (!Request.Cookies.TryGetValue(AuthConstants.RefreshToken, out var refreshToken) ||
+        if (!Request.Cookies.TryGetValue(Constants.RefreshToken, out var refreshToken) ||
             string.IsNullOrWhiteSpace(refreshToken))
         {
             throw new UnauthorizedException("Refresh token không hợp lệ");
@@ -96,8 +95,7 @@ public class AuthController(
 
     private long GetCurrentUserId()
     {
-        var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
-            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
         if (!long.TryParse(sub, out var userId))
             throw new UnauthorizedException("Access token không hợp lệ");
 
@@ -125,8 +123,8 @@ public class AuthController(
             Expires = nowUtc.AddDays(_refreshExpiresInDays)
         };
 
-        Response.Cookies.Append(AuthConstants.AccessToken, accessToken, accessCookieOptions);
-        Response.Cookies.Append(AuthConstants.RefreshToken, refreshToken, refreshCookieOptions);
+        Response.Cookies.Append(Constants.AccessToken, accessToken, accessCookieOptions);
+        Response.Cookies.Append(Constants.RefreshToken, refreshToken, refreshCookieOptions);
     }
 
     private void ClearAuthCookies()
@@ -139,7 +137,7 @@ public class AuthController(
             Path = "/"
         };
 
-        Response.Cookies.Delete(AuthConstants.AccessToken, cookieOptions);
-        Response.Cookies.Delete(AuthConstants.RefreshToken, cookieOptions);
+        Response.Cookies.Delete(Constants.AccessToken, cookieOptions);
+        Response.Cookies.Delete(Constants.RefreshToken, cookieOptions);
     }
 }

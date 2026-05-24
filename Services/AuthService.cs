@@ -1,17 +1,19 @@
 using System.Security.Cryptography;
 using System.Text;
 using IdGen;
+using Microsoft.Extensions.Options;
 using QuizForge.DTOs;
 using QuizForge.Exceptions;
 using QuizForge.Mappers;
 using QuizForge.Models;
+using QuizForge.Options;
 using QuizForge.Providers;
 using QuizForge.Repositories;
 
 namespace QuizForge.Services;
 
 public class AuthService(
-    IConfiguration configuration,
+    IOptions<TokenOptions> tokenOptions,
     IIdGenerator<long> idGenerator,
     IOAuthProvider oAuthProvider,
     ITokenProvider tokenProvider,
@@ -24,7 +26,7 @@ public class AuthService(
     private readonly ITokenProvider _tokenProvider = tokenProvider;
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository = refreshTokenRepository;
-    private readonly int _refreshExpiresInDays = configuration.GetValue("Token:RefreshTokenExpiresDays", 7);
+    private readonly int _refreshExpiresInDays = tokenOptions.Value.RefreshTokenExpiresDays;
 
     public async Task<(UserResponseDto, string, string)> GoogleLoginAsync(
         GoogleLoginRequestDto dto,

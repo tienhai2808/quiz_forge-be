@@ -1,9 +1,12 @@
 GCS_KEY_PATH := Configs/gcs.json
 
-.PHONY: github run
+.PHONY: github run scan
 
 run:
 	@GOOGLE_APPLICATION_CREDENTIALS=$(GCS_KEY_PATH) dotnet run
+
+scan:
+	./Scripts/container-scan.sh
 
 github:
 	@if [ -z "$(CM)" ]; then \

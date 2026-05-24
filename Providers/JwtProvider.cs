@@ -2,35 +2,31 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using QuizForge.Exceptions;
+using Microsoft.Extensions.Options;
+using QuizForge.Options;
 
 namespace QuizForge.Providers;
 
-public class JwtProvider(IConfiguration configuration) : ITokenProvider
+public class JwtProvider(IOptions<JwtOptions> jwtOptions) : ITokenProvider
 {
-    private readonly IConfiguration _configuration = configuration;
+    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
 
     public string GenerateAccessToken(long userID)
     {
-        var signingKey = _configuration.GetValue("Jwt:SigningKey", "quiz-forge-random-string");
-        var issuer = _configuration.GetValue("Jwt:Issuer", "QuizForge");
-        var audience = _configuration.GetValue("Jwt:Audience", "QuizForgeClient");
-        var expiresMinutes = _configuration.GetValue("Jwt:AccessTokenExpiresMinutes", 30);
-
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userID.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SigningKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
+            issuer: _jwtOptions.Issuer,
+            audience: _jwtOptions.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(expiresMinutes),
+            expires: DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpiresMinutes),
             signingCredentials: credentials
         );
 

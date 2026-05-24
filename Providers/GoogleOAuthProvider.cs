@@ -1,26 +1,19 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
 using QuizForge.DTOs;
 using QuizForge.Exceptions;
+using QuizForge.Options;
 
 namespace QuizForge.Providers;
 
 public class GoogleOAuthProvider(
     HttpClient httpClient,
-    IConfiguration configuration
+    IOptions<GoogleOAuthOptions> googleOAuthOptions
 ) : IOAuthProvider
 {
+    private readonly GoogleOAuthOptions _googleOAuthOptions = googleOAuthOptions.Value;
     private readonly HttpClient _httpClient = httpClient;
-    private readonly string _clientId = configuration.GetValue("GoogleAuth:ClientId", string.Empty);
-    private readonly string _clientSecret = configuration.GetValue("GoogleAuth:ClientSecret", string.Empty);
-    private readonly string _tokenEndpoint =
-        configuration.GetValue("GoogleAuth:TokenEndpoint", "https://oauth2.googleapis.com/token");
-    private readonly string _userInfoEndpoint =
-        configuration.GetValue("GoogleAuth:UserInfoEndpoint", "https://openidconnect.googleapis.com/v1/userinfo");
-    private readonly HashSet<string> _allowedRedirectUris =
-        configuration.GetSection($"GoogleAuth:AllowedRedirectUris").Get<string[]>() is { Length: > 0 } uris
-            ? [.. uris]
-            : [];
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public async Task<OAuthTokenDto> ExchangeCodeAsync(
@@ -34,13 +27,13 @@ public class GoogleOAuthProvider(
         var formData = new Dictionary<string, string>
         {
             ["code"] = code,
-            ["client_id"] = _clientId,
-            ["client_secret"] = _clientSecret,
+            ["client_id"] = _googleOAuthOptions.ClientId,
+            ["client_secret"] = _googleOAuthOptions.ClientSecret,
             ["redirect_uri"] = redirectUri,
             ["grant_type"] = "authorization_code"
         };
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, _tokenEndpoint)
+        using var request = new HttpRequestMessage(HttpMethod.Post, _googleOAuthOptions.TokenEndpoint)
         {
             Content = new FormUrlEncodedContent(formData)
         };
@@ -63,7 +56,7 @@ public class GoogleOAuthProvider(
         CancellationToken cancellationToken = default
     )
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, _userInfoEndpoint);
+        using var request = new HttpRequestMessage(HttpMethod.Get, _googleOAuthOptions.UserInfoEndpoint);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -81,10 +74,11 @@ public class GoogleOAuthProvider(
 
     private void ValidateGoogleConfig(string redirectUri)
     {
-        if (string.IsNullOrWhiteSpace(_clientId) || string.IsNullOrWhiteSpace(_clientSecret))
+        if (string.IsNullOrWhiteSpace(_googleOAuthOptions.ClientId) ||
+            string.IsNullOrWhiteSpace(_googleOAuthOptions.ClientSecret))
             throw new InternalServerException("Thiếu cấu hình GoogleAuth ClientId/ClientSecret");
 
-        if (!_allowedRedirectUris.Contains(redirectUri))
+        if (!_googleOAuthOptions.AllowedRedirectUris.Contains(redirectUri))
             throw new ValidationException("Uri chuyển hướng không hợp lệ");
     }
 }

@@ -1,16 +1,18 @@
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Storage.V1;
+using Microsoft.Extensions.Options;
 using QuizForge.Exceptions;
+using QuizForge.Options;
 
 namespace QuizForge.Providers;
 
 public class GcsProvider(
-    IConfiguration configuration,
+    IOptions<GcsOptions> gcsOptions,
     ILogger<GcsProvider> logger
 ) : IStorageProvider
 {
+    private readonly GcsOptions _gcsOptions = gcsOptions.Value;
     private readonly ILogger<GcsProvider> _logger = logger;
-    private readonly string _bucketName = configuration.GetValue("Gcs:BucketName", string.Empty);
     private readonly Lazy<UrlSigner> _urlSigner = new(() =>
         UrlSigner.FromCredential(GoogleCredential.GetApplicationDefault()));
 
@@ -20,7 +22,7 @@ public class GcsProvider(
         CancellationToken cancellationToken = default
     )
     {
-        if (string.IsNullOrWhiteSpace(_bucketName))
+        if (string.IsNullOrWhiteSpace(_gcsOptions.BucketName))
             throw new InternalServerException("Thiếu cấu hình Gcs:BucketName");
 
         if (expiresInMinutes <= 0)
@@ -30,7 +32,7 @@ public class GcsProvider(
         try
         {
             url = _urlSigner.Value.Sign(
-                _bucketName,
+                _gcsOptions.BucketName,
                 objectName,
                 TimeSpan.FromMinutes(expiresInMinutes),
                 HttpMethod.Put

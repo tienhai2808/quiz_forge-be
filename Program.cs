@@ -8,15 +8,16 @@ using QuizForge.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddAppOptions();
 builder.Services.AddApiControllers();
 builder.Services.AddOpenApi();
-builder.Services.AddJwtAuth(builder.Configuration);
-builder.Services.AddAppCors(builder.Configuration);
+builder.Services.AddJwtAuth();
+builder.Services.AddAppCors();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("Default"),
         npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history")));
-builder.Services.AddSnowflakeIdGenerator(builder.Configuration);
+builder.Services.AddSnowflakeIdGenerator();
 builder.Services.AddHttpClient<IOAuthProvider, GoogleOAuthProvider>();
 builder.Services.AddScoped<IStorageProvider, GcsProvider>();
 builder.Services.AddScoped<ITokenProvider, JwtProvider>();
@@ -26,6 +27,13 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IFileService, FileService>();
 
 var app = builder.Build();
+
+if (app.Environment.IsProduction())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 if (app.Environment.IsDevelopment())
 {

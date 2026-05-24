@@ -1,31 +1,33 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using QuizForge.Constants;
+using Microsoft.Extensions.Options;
+using QuizForge.Common;
+using QuizForge.Options;
 
 namespace QuizForge.Extensions;
 
 public static class AuthExtensions
 {
-    public static IServiceCollection AddJwtAuth(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddJwtAuth(this IServiceCollection services)
     {
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                var jwtSection = configuration.GetSection("Jwt");
-                var signingKey = jwtSection.GetValue("SigningKey", string.Empty);
-                var issuer = jwtSection.GetValue("Issuer", "QuizForge");
-                var audience = jwtSection.GetValue("Audience", "QuizForgeClient");
+            .AddJwtBearer();
 
+        services
+            .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IOptions<JwtOptions>>((options, jwtOptions) =>
+            {
+                var jwt = jwtOptions.Value;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
                     ValidateIssuer = true,
-                    ValidIssuer = issuer,
+                    ValidIssuer = jwt.Issuer,
                     ValidateAudience = true,
-                    ValidAudience = audience,
+                    ValidAudience = jwt.Audience,
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 };
@@ -38,7 +40,7 @@ public static class AuthExtensions
                             return Task.CompletedTask;
                         }
 
-                        if (context.Request.Cookies.TryGetValue(AuthConstants.AccessToken, out var accessToken))
+                        if (context.Request.Cookies.TryGetValue(Constants.AccessToken, out var accessToken))
                         {
                             context.Token = accessToken;
                         }

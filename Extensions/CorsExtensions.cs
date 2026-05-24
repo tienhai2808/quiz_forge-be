@@ -1,24 +1,27 @@
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.Extensions.Options;
+using AppCorsOptions = QuizForge.Options.CorsOptions;
+
 namespace QuizForge.Extensions;
 
 public static class CorsExtensions
 {
     private const string FrontendCorsPolicy = "FrontendPolicy";
 
-    public static IServiceCollection AddAppCors(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddAppCors(this IServiceCollection services)
     {
-        var allowedOrigins = configuration
-            .GetSection("Cors:AllowedOrigins")
-            .Get<string[]>() ?? ["http://localhost:3000"];
-
-        services.AddCors(options =>
-        {
-            options.AddPolicy(FrontendCorsPolicy, policy =>
-                policy
-                    .WithOrigins(allowedOrigins)
-                    .AllowCredentials()
-                    .AllowAnyHeader()
-                    .AllowAnyMethod());
-        });
+        services.AddCors();
+        services
+            .AddOptions<CorsOptions>()
+            .Configure<IOptions<AppCorsOptions>>((corsOptions, appCorsOptions) =>
+            {
+                corsOptions.AddPolicy(FrontendCorsPolicy, policy =>
+                    policy
+                        .WithOrigins([.. appCorsOptions.Value.AllowedOrigins])
+                        .AllowCredentials()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod());
+            });
 
         return services;
     }
