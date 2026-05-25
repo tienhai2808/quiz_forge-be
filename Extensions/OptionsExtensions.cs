@@ -32,6 +32,11 @@ public static class OptionsExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
         services
+            .AddOptions<RedisOptions>()
+            .BindConfiguration(RedisOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services
             .AddOptions<GoogleOAuthOptions>()
             .BindConfiguration(GoogleOAuthOptions.SectionName)
             .ValidateDataAnnotations()

@@ -3,7 +3,7 @@ namespace QuizForge.Models;
 public class ExtractionCache
 {
     public string FileHashSha256 { get; set; } = string.Empty;
-    public ExtractionParserMode ParserMode { get; set; }
+    public string ParserMode { get; set; } = ExtractionParserModes.RegexText;
     public string ExtractorVersion { get; set; } = string.Empty;
     public long DocumentId { get; set; }
     public DateTime CreatedAt { get; set; }

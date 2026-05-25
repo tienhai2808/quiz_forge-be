@@ -74,9 +74,7 @@ public class AuthController(
     {
         if (!Request.Cookies.TryGetValue(Constants.RefreshToken, out var refreshToken) ||
             string.IsNullOrWhiteSpace(refreshToken))
-        {
             throw new UnauthorizedException("Refresh token không hợp lệ");
-        }
 
         try
         {

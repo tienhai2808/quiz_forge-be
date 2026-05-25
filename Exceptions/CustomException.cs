@@ -7,7 +7,7 @@ public class CustomException(string message, int status) : Exception(message)
 
 public class NotFoundException(string message) : CustomException(message, 404);
 
-public class ValidationException(string message) : CustomException(message, 400);
+public class BadRequestException(string message) : CustomException(message, 400);
 
 public class UnauthorizedException(string message) : CustomException(message, 401);
 

@@ -18,6 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration.GetConnectionString("Default"),
         npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history")));
 builder.Services.AddSnowflakeIdGenerator();
+builder.Services.AddAppCache();
 builder.Services.AddHttpClient<IOAuthProvider, GoogleOAuthProvider>();
 builder.Services.AddScoped<IStorageProvider, GcsProvider>();
 builder.Services.AddScoped<ITokenProvider, JwtProvider>();

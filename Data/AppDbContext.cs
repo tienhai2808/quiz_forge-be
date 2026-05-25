@@ -91,7 +91,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasDatabaseName("ix_refresh_tokens_user_id");
 
         var document = modelBuilder.Entity<Document>();
-        document.ToTable("documents");
+        document.ToTable("documents", table =>
+        {
+            table.HasCheckConstraint(
+                "ck_documents_source_type",
+                "source_type IN ('docx', 'pdf_text', 'pdf_ocr', 'image')"
+            );
+            table.HasCheckConstraint(
+                "ck_documents_status",
+                "status IN ('uploaded', 'processing', 'parsed', 'failed')"
+            );
+        });
 
         document.HasKey(x => x.Id);
         document.Property(x => x.Id)
@@ -105,14 +115,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         document.Property(x => x.SourceType)
             .HasColumnName("source_type")
             .IsRequired()
-            .HasConversion<byte>()
-            .HasColumnType("smallint");
+            .HasMaxLength(32)
+            .HasColumnType("character varying(32)");
 
-        document.Property(x => x.FilePath)
-            .HasColumnName("file_path")
+        document.Property(x => x.FileKey)
+            .HasColumnName("file_key")
             .IsRequired()
-            .HasMaxLength(1024)
-            .HasColumnType("character varying(1024)");
+            .HasMaxLength(255)
+            .HasColumnType("character varying(255)");
 
         document.Property(x => x.FileHashSha256)
             .HasColumnName("file_hash_sha256")
@@ -123,8 +133,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         document.Property(x => x.Status)
             .HasColumnName("status")
             .IsRequired()
-            .HasConversion<byte>()
-            .HasColumnType("smallint");
+            .HasMaxLength(32)
+            .HasColumnType("character varying(32)");
 
         document.Property(x => x.CreatedAt)
             .HasColumnName("created_at")
@@ -141,15 +151,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(x => x.Documents)
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        document.HasIndex(x => x.UserId)
-            .HasDatabaseName("ix_documents_user_id");
-
+        
         document.HasIndex(x => x.FileHashSha256)
-            .HasDatabaseName("ix_documents_file_hash_sha256");
+            .HasDatabaseName("ux_documents_file_hash_sha256");
 
         var extractionCache = modelBuilder.Entity<ExtractionCache>();
-        extractionCache.ToTable("extraction_caches");
+        extractionCache.ToTable("extraction_caches", table =>
+        {
+            table.HasCheckConstraint(
+                "ck_extraction_caches_parser_mode",
+                "parser_mode IN ('regex_text', 'ocr', 'ai_vision')"
+            );
+        });
 
         extractionCache.HasKey(x => new { x.FileHashSha256, x.ParserMode, x.ExtractorVersion });
 
@@ -162,8 +175,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         extractionCache.Property(x => x.ParserMode)
             .HasColumnName("parser_mode")
             .IsRequired()
-            .HasConversion<byte>()
-            .HasColumnType("smallint");
+            .HasMaxLength(32)
+            .HasColumnType("character varying(32)");
 
         extractionCache.Property(x => x.ExtractorVersion)
             .HasColumnName("extractor_version")
@@ -253,7 +266,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 });
 
         var question = modelBuilder.Entity<Question>();
-        question.ToTable("questions");
+        question.ToTable("questions", table =>
+        {
+            table.HasCheckConstraint(
+                "ck_questions_question_type",
+                "question_type IN ('single_choice', 'multiple_choice', 'true_false', 'short_answer')"
+            );
+        });
 
         question.HasKey(x => x.Id);
         question.Property(x => x.Id)
@@ -276,8 +295,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         question.Property(x => x.QuestionType)
             .HasColumnName("question_type")
             .IsRequired()
-            .HasConversion<byte>()
-            .HasColumnType("smallint");
+            .HasMaxLength(32)
+            .HasColumnType("character varying(32)");
 
         question.Property(x => x.CorrectAnswer)
             .HasColumnName("correct_answer")
@@ -334,7 +353,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasDatabaseName("ux_question_options_question_id_option_key");
 
         var quizAttempt = modelBuilder.Entity<QuizAttempt>();
-        quizAttempt.ToTable("quiz_attempts");
+        quizAttempt.ToTable("quiz_attempts", table =>
+        {
+            table.HasCheckConstraint(
+                "ck_quiz_attempts_status",
+                "status IN ('in_progress', 'submitted', 'graded', 'expired')"
+            );
+        });
 
         quizAttempt.HasKey(x => x.Id);
         quizAttempt.Property(x => x.Id)
@@ -372,8 +397,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         quizAttempt.Property(x => x.Status)
             .HasColumnName("status")
             .IsRequired()
-            .HasConversion<byte>()
-            .HasColumnType("smallint");
+            .HasMaxLength(32)
+            .HasColumnType("character varying(32)");
 
         quizAttempt.HasOne(x => x.Quiz)
             .WithMany(x => x.QuizAttempts)

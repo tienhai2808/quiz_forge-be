@@ -4,10 +4,10 @@ public class Document
 {
     public long Id { get; set; }
     public long UserId { get; set; }
-    public DocumentSourceType SourceType { get; set; }
-    public string FilePath { get; set; } = string.Empty;
+    public string SourceType { get; set; } = DocumentSourceTypes.Docx;
+    public string FileKey { get; set; } = string.Empty;
     public string FileHashSha256 { get; set; } = string.Empty;
-    public DocumentStatus Status { get; set; }
+    public string Status { get; set; } = DocumentStatuses.Uploaded;
     public DateTime CreatedAt { get; set; }
     public bool IsPublic { get; set; }
 

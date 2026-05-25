@@ -1,6 +1,6 @@
 namespace QuizForge.Models;
 
-public enum RatingStar : byte
+public enum RatingStars : byte
 {
     One = 1,
     Two = 2,

@@ -7,7 +7,7 @@ public interface IOAuthProvider
     Task<OAuthTokenDto> ExchangeCodeAsync(
         string code,
         string redirectUri,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken
     );
 
     Task<OAuthUserDto> GetUserInfoAsync(

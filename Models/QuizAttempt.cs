@@ -9,7 +9,7 @@ public class QuizAttempt
     public DateTime? SubmittedAt { get; set; }
     public int TotalCorrectAnswers { get; set; }
     public int TotalQuestions { get; set; }
-    public QuizAttemptStatus Status { get; set; }
+    public string Status { get; set; } = QuizAttemptStatuses.Submitted;
 
     public Quiz Quiz { get; set; } = null!;
     public User User { get; set; } = null!;

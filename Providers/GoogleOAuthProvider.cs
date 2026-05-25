@@ -19,7 +19,7 @@ public class GoogleOAuthProvider(
     public async Task<OAuthTokenDto> ExchangeCodeAsync(
         string code,
         string redirectUri,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken
     )
     {
         ValidateGoogleConfig(redirectUri);
@@ -53,7 +53,7 @@ public class GoogleOAuthProvider(
 
     public async Task<OAuthUserDto> GetUserInfoAsync(
         string accessToken,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken
     )
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, _googleOAuthOptions.UserInfoEndpoint);
@@ -79,6 +79,6 @@ public class GoogleOAuthProvider(
             throw new InternalServerException("Thiếu cấu hình GoogleAuth ClientId/ClientSecret");
 
         if (!_googleOAuthOptions.AllowedRedirectUris.Contains(redirectUri))
-            throw new ValidationException("Uri chuyển hướng không hợp lệ");
+            throw new BadRequestException("Uri chuyển hướng không hợp lệ");
     }
 }

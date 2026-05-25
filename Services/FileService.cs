@@ -10,7 +10,7 @@ public class FileService(IStorageProvider storageProvider) : IFileService
 
     public async Task<List<UploadPresignedUrlResponseDto>> CreatePresignedUrlsAsync(
         UploadPresignedUrlsRequestDto dto,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken
     )
     {
         var results = new List<UploadPresignedUrlResponseDto>(dto.Files.Count);

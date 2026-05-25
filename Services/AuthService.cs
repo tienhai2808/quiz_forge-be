@@ -30,7 +30,7 @@ public class AuthService(
 
     public async Task<(UserResponseDto, string, string)> GoogleLoginAsync(
         GoogleLoginRequestDto dto,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken
     )
     {
         var tokenResponse = await _oAuthProvider.ExchangeCodeAsync(
@@ -78,7 +78,7 @@ public class AuthService(
         return (user.ToUserResponse(), accessToken, refreshToken);
     }
 
-    public async Task<UserResponseDto> UserInfoAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<UserResponseDto> UserInfoAsync(long userId, CancellationToken cancellationToken)
     {
         var user = await _userRepository.FindByIdAsync(userId, cancellationToken)
             ?? throw new NotFoundException("Không tìm thấy người dùng");
@@ -89,11 +89,11 @@ public class AuthService(
     public async Task LogoutAsync(
         long userId,
         string refreshToken,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken
     )
     {
         var refreshTokenHash = Sha256Hash(refreshToken);
-        var deletedRows = await _refreshTokenRepository.DeleteActiveByTokenAndUserIdAsync(
+        await _refreshTokenRepository.DeleteActiveByTokenAndUserIdAsync(
             refreshTokenHash,
             userId,
             cancellationToken
@@ -102,7 +102,7 @@ public class AuthService(
 
     public async Task<(string, string)> RefreshTokenAsync(
         string refreshToken,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken
     )
     {
         var nowUtc = DateTime.UtcNow;

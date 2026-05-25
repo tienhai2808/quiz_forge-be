@@ -18,15 +18,15 @@ public class GcsProvider(
 
     public Task<string> GenerateUploadUrlAsync(
         string objectName,
-        int expiresInMinutes = 15,
-        CancellationToken cancellationToken = default
+        int expiresInMinutes,
+        CancellationToken cancellationToken
     )
     {
         if (string.IsNullOrWhiteSpace(_gcsOptions.BucketName))
             throw new InternalServerException("Thiếu cấu hình Gcs:BucketName");
 
         if (expiresInMinutes <= 0)
-            throw new ValidationException("Thời gian hết hạn URL phải lớn hơn 0 phút");
+            throw new BadRequestException("Thời gian hết hạn URL phải lớn hơn 0 phút");
 
         string url;
         try

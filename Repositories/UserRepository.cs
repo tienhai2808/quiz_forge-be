@@ -10,13 +10,13 @@ public class UserRepository(AppDbContext db) : IUserRepository
 {
     private readonly AppDbContext _db = db;
 
-    public Task<User?> FindByGoogleIdAsync(string googleId, CancellationToken cancellationToken = default)
+    public Task<User?> FindByGoogleIdAsync(string googleId, CancellationToken cancellationToken)
         => _db.Users.FirstOrDefaultAsync(u => u.GoogleId == googleId, cancellationToken);
 
-    public Task<User?> FindByIdAsync(long id, CancellationToken cancellationToken = default)
+    public Task<User?> FindByIdAsync(long id, CancellationToken cancellationToken)
         => _db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
-    public async Task CreateAsync(User user, CancellationToken cancellationToken = default)
+    public async Task CreateAsync(User user, CancellationToken cancellationToken)
     {
         _db.Users.Add(user);
         try
@@ -32,7 +32,7 @@ public class UserRepository(AppDbContext db) : IUserRepository
         }
     }
 
-    public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(User user, CancellationToken cancellationToken)
     {
         _db.Users.Update(user);
         await _db.SaveChangesAsync(cancellationToken);
