@@ -11,6 +11,6 @@ public class User
 
     public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
     public ICollection<Document> Documents { get; set; } = [];
-    public ICollection<QuizAttempt> QuizAttempts { get; set; } = [];
-    public ICollection<Rating> Ratings { get; set; } = [];
+    // public ICollection<QuizAttempt> QuizAttempts { get; set; } = [];
+    // public ICollection<Rating> Ratings { get; set; } = [];
 }

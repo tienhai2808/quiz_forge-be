@@ -37,6 +37,11 @@ public static class OptionsExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
         services
+            .AddOptions<RabbitMqOptions>()
+            .BindConfiguration(RabbitMqOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services
             .AddOptions<GoogleOAuthOptions>()
             .BindConfiguration(GoogleOAuthOptions.SectionName)
             .ValidateDataAnnotations()

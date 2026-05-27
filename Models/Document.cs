@@ -12,5 +12,6 @@ public class Document
     public bool IsPublic { get; set; }
 
     public User User { get; set; } = null!;
-    public ICollection<Quiz> Quizzes { get; set; } = [];
+    public Extraction Extraction { get; set; } = null!;
+    // public ICollection<Quiz> Quizzes { get; set; } = [];
 }

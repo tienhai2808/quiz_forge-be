@@ -13,3 +13,13 @@ Content-Type: application/json
 }
 
 ###
+
+POST {{QuizForge_HostAddress}}/documents
+Content-Type: application/json
+
+{
+  "fileKey": "TIEN_HAI.pdf",
+  "sourceType": "pdf_text",
+  "isPublic": true,
+  "fileHashSha256": "12345678"
+}

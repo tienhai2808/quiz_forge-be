@@ -3,6 +3,7 @@ using IdGen;
 using QuizForge.DTOs;
 using QuizForge.Exceptions;
 using QuizForge.Models;
+using QuizForge.Providers;
 using QuizForge.Repositories;
 using StackExchange.Redis;
 
@@ -11,12 +12,14 @@ namespace QuizForge.Services;
 public class DocumentService(
     IIdGenerator<long> idGenerator,
     IDocumentRepository documentRepo,
-    IConnectionMultiplexer cache
+    IConnectionMultiplexer cache,
+    IMessageQueueProvider messageQueueProvider
 ) : IDocumentService
 {
     private readonly IIdGenerator<long> _idGenerator = idGenerator;
     private readonly IDocumentRepository _documentRepo = documentRepo;
     private readonly IDatabase _cache = cache.GetDatabase();
+    private readonly IMessageQueueProvider _messageQueueProvider = messageQueueProvider;
     private readonly string _prefixKeyUploadDocumentCache = "document_upload";
 
     public async Task<long> CreateAsync(
@@ -28,6 +31,7 @@ public class DocumentService(
         string? sourceType = dto.SourceType;
         string? fileKey = dto.FileKey;
         string? fileHashSha256 = dto.FileHashSha256;
+        var isExtracted = false;
 
         if (dto.UploadCode != null)
         {
@@ -44,6 +48,7 @@ public class DocumentService(
             sourceType = docObj.SourceType;
             fileKey = docObj.FileKey;
             fileHashSha256 = docObj.FileHashSha256;
+            isExtracted = true;
         }
 
         if (
@@ -65,6 +70,16 @@ public class DocumentService(
         };
 
         await _documentRepo.CreateAsync(document, cancellationToken);
+
+        if (!isExtracted)
+            await _messageQueueProvider.PublishAsync(
+                new ExtractDocumentMessageDto(
+                    FileKey: fileKey,
+                    HashSha256: fileHashSha256
+                ),
+                cancellationToken
+            );
+
         return documentId;
     }
 

@@ -84,7 +84,7 @@ public class AuthController(
         catch (UnauthorizedException)
         {
             ClearAuthCookies();
-            throw;
+            throw new UnauthorizedException("Refresh token không hợp lệ");
         }
 
         var response = ApiResponseDto<object>.Success(null);

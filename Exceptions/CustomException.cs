@@ -15,6 +15,8 @@ public class ConflictException(string message) : CustomException(message, 409);
 
 public class ForbiddenException(string message) : CustomException(message, 403);
 
+public class TooManyRequestException(string message) : CustomException(message, 429);
+
 public class InternalServerException(string message) : CustomException(message, 500);
 
 public class ExternalServiceException(string message) : CustomException(message, 502);

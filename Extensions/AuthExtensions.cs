@@ -36,14 +36,10 @@ public static class AuthExtensions
                     OnMessageReceived = context =>
                     {
                         if (!string.IsNullOrWhiteSpace(context.Token))
-                        {
                             return Task.CompletedTask;
-                        }
 
                         if (context.Request.Cookies.TryGetValue(Constants.AccessToken, out var accessToken))
-                        {
                             context.Token = accessToken;
-                        }
 
                         return Task.CompletedTask;
                     }

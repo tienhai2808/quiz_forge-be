@@ -19,12 +19,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history")));
 builder.Services.AddSnowflakeIdGenerator();
 builder.Services.AddAppCache();
+builder.Services.AddAppMessageQueue();
 builder.Services.AddHttpClient<IOAuthProvider, GoogleOAuthProvider>();
 builder.Services.AddScoped<IStorageProvider, GcsProvider>();
 builder.Services.AddScoped<ITokenProvider, JwtProvider>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+builder.Services.AddScoped<IExtractionRepository, ExtractionRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IFileService, FileService>();
 
 var app = builder.Build();
