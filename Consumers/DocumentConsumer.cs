@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using QuizForge.DTOs;
+using QuizForge.Exceptions;
 using QuizForge.Models;
 using QuizForge.Providers;
 using QuizForge.Repositories;
@@ -64,6 +65,7 @@ public class DocumentConsumer(
                     (int)response.StatusCode,
                     errorBody
                 );
+                await SetDocumentStatusAsync(message.DocumentId, DocumentStatuses.Failed, cancellationToken);
                 return;
             }
 
@@ -77,6 +79,7 @@ public class DocumentConsumer(
                     "Parse service returned empty response body for file '{FileKey}'",
                     message.FileKey
                 );
+                await SetDocumentStatusAsync(message.DocumentId, DocumentStatuses.Failed, cancellationToken);
                 return;
             }
 
@@ -88,10 +91,20 @@ public class DocumentConsumer(
                         "Parse service returned status completed but missing result for file '{FileKey}'",
                         message.FileKey
                     );
+                    await SetDocumentStatusAsync(message.DocumentId, DocumentStatuses.Failed, cancellationToken);
                     return;
                 }
 
                 await SaveExtractionAsync(message.HashSha256, parseResponse, cancellationToken);
+                await MarkDocumentParsedAsync(
+                    message.DocumentId,
+                    message.HashSha256,
+                    cancellationToken
+                );
+            }
+            else
+            {
+                await SetDocumentStatusAsync(message.DocumentId, DocumentStatuses.Failed, cancellationToken);
             }
 
             _logger.LogInformation(
@@ -106,6 +119,7 @@ public class DocumentConsumer(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to process parse flow for file '{FileKey}'", message.FileKey);
+            await SetDocumentStatusAsync(message.DocumentId, DocumentStatuses.Failed, cancellationToken);
         }
     }
 
@@ -118,19 +132,49 @@ public class DocumentConsumer(
         using var scope = _serviceScopeFactory.CreateScope();
         var extractionRepository = scope.ServiceProvider.GetRequiredService<IExtractionRepository>();
 
-        var existedExtraction = await extractionRepository.FindByHashSha256(hashSha256, cancellationToken);
-        if (existedExtraction is not null)
-            return;
-
         var extraction = new Extraction
         {
             HashSha256 = hashSha256,
-            Version = parseResponse.Version,
-            RawJson = parseResponse.Result!.Data.GetRawText()
+            RawJson = parseResponse.Result!.Data.Clone()
         };
 
         await extractionRepository.CreateAsync(extraction, cancellationToken);
 
         _logger.LogInformation("Created extraction for hash '{HashSha256}'", hashSha256);
+    }
+
+    private async Task SetDocumentStatusAsync(
+        long documentId,
+        string status,
+        CancellationToken cancellationToken
+    )
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var documentRepository = scope.ServiceProvider.GetRequiredService<IDocumentRepository>();
+
+        var document = await documentRepository.FindByIdAsync(documentId, cancellationToken)
+            ?? throw new NotFoundException("Không tìm thấy tài liệu");
+
+        document.Status = status;
+
+        await documentRepository.UpdateAsync(document, cancellationToken);
+    }
+
+    private async Task MarkDocumentParsedAsync(
+        long documentId,
+        string fileHashSha256,
+        CancellationToken cancellationToken
+    )
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var documentRepository = scope.ServiceProvider.GetRequiredService<IDocumentRepository>();
+
+        var document = await documentRepository.FindByIdAsync(documentId, cancellationToken)
+            ?? throw new NotFoundException("Không tìm thấy tài liệu");
+
+        document.FileHashSha256 = fileHashSha256;
+        document.Status = DocumentStatuses.Parsed;
+
+        await documentRepository.UpdateAsync(document, cancellationToken: cancellationToken);
     }
 }

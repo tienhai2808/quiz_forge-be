@@ -15,7 +15,7 @@ public class DocumentController(IDocumentService documentService) : ControllerBa
     private readonly IDocumentService _documentService = documentService;
 
     [Authorize]
-    [HttpPost]
+    [HttpPost("upload")]
     public async Task<IActionResult> Upload(
         UploadDocumentRequestDto dto,
         CancellationToken cancellationToken

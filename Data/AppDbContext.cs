@@ -88,12 +88,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         document.ToTable("documents", table =>
         {
             table.HasCheckConstraint(
-                "ck_documents_source_type",
-                "source_type IN ('docx', 'pdf_text', 'pdf_ocr', 'image')"
-            );
-            table.HasCheckConstraint(
                 "ck_documents_status",
-                "status IN ('uploaded', 'processing', 'parsed', 'failed')"
+                "status IN ('processing', 'parsed', 'failed')"
             );
         });
 
@@ -106,12 +102,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("user_id")
             .IsRequired();
 
-        document.Property(x => x.SourceType)
-            .HasColumnName("source_type")
-            .IsRequired()
-            .HasMaxLength(32)
-            .HasColumnType("character varying(32)");
-
         document.Property(x => x.FileKey)
             .HasColumnName("file_key")
             .IsRequired()
@@ -120,7 +110,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         document.Property(x => x.FileHashSha256)
             .HasColumnName("file_hash_sha256")
-            .IsRequired()
             .HasMaxLength(64)
             .HasColumnType("character varying(64)");
 
@@ -150,7 +139,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(x => x.Documents)
             .HasForeignKey(x => x.FileHashSha256)
             .HasPrincipalKey(x => x.HashSha256)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
 
         document.HasIndex(x => x.FileHashSha256)
             .HasDatabaseName("ix_documents_file_hash_sha256");
@@ -159,22 +149,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         extraction.ToTable("extractions");
 
         extraction.HasKey(x => x.HashSha256);
-
         extraction.Property(x => x.HashSha256)
             .HasColumnName("hash_sha256")
             .ValueGeneratedNever()
             .HasMaxLength(64)
             .HasColumnType("character varying(64)");
 
-        extraction.Property(x => x.Version)
-            .HasColumnName("version")
-            .IsRequired()
-            .HasMaxLength(32)
-            .HasColumnType("character varying(32)");
-
         extraction.Property(x => x.RawJson)
             .HasColumnName("raw_json")
             .IsRequired()
-            .HasColumnType("text");
+            .HasColumnType("jsonb");
     }
 }

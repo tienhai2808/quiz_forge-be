@@ -28,7 +28,6 @@ public class DocumentService(
         CancellationToken cancellationToken
     )
     {
-        string? sourceType = dto.SourceType;
         string? fileKey = dto.FileKey;
         string? fileHashSha256 = dto.FileHashSha256;
         var isExtracted = false;
@@ -45,27 +44,25 @@ public class DocumentService(
             if (docObj.UserId != userId)
                 throw new ConflictException("Người dùng không hợp lệ");
 
-            sourceType = docObj.SourceType;
             fileKey = docObj.FileKey;
             fileHashSha256 = docObj.FileHashSha256;
             isExtracted = true;
         }
 
-        if (
-            string.IsNullOrWhiteSpace(sourceType)
-            || string.IsNullOrWhiteSpace(fileKey)
-            || string.IsNullOrWhiteSpace(fileHashSha256)
-        )
+        if (string.IsNullOrWhiteSpace(fileKey) || string.IsNullOrWhiteSpace(fileHashSha256))
             throw new BadRequestException("Yêu cầu đủ dữ liệu gửi lên");
+
+        if (!isExtracted && string.IsNullOrWhiteSpace(fileHashSha256))
+            throw new BadRequestException("Yêu cầu hash file để xử lý parse");
 
         var documentId = _idGenerator.CreateId();
         var document = new Document
         {
             Id = documentId,
             UserId = userId,
-            SourceType = sourceType,
             FileKey = fileKey,
-            FileHashSha256 = fileHashSha256,
+            FileHashSha256 = isExtracted ? fileHashSha256 : null,
+            Status = isExtracted ? DocumentStatuses.Parsed : DocumentStatuses.Processing,
             IsPublic = dto.IsPublic
         };
 
@@ -74,8 +71,9 @@ public class DocumentService(
         if (!isExtracted)
             await _messageQueueProvider.PublishAsync(
                 new ExtractDocumentMessageDto(
+                    DocumentId: documentId,
                     FileKey: fileKey,
-                    HashSha256: fileHashSha256
+                    HashSha256: fileHashSha256!
                 ),
                 cancellationToken
             );
@@ -90,13 +88,12 @@ public class DocumentService(
     )
     {
         var document = await _documentRepo.FindByFileHashSha256Async(dto.FileHashSha256, cancellationToken);
-        if (document != null)
+        if (document != null && !string.IsNullOrWhiteSpace(document.FileHashSha256))
         {
             var uploadCode = Guid.NewGuid().ToString("D");
             var cacheKey = $"{_prefixKeyUploadDocumentCache}:{uploadCode}";
             var cacheValue = new UploadDocumentCacheDto(
                 userId,
-                document.SourceType,
                 document.FileHashSha256,
                 document.FileKey
             );
@@ -110,7 +107,6 @@ public class DocumentService(
             return new UploadDocumentResponseDto(
                 NeedUpload: false,
                 UploadCode: uploadCode,
-                SourceType: document.SourceType,
                 FileKey: document.FileKey,
                 FileHashSha256: document.FileHashSha256
             );
