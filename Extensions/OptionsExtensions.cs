@@ -46,6 +46,11 @@ public static class OptionsExtensions
             .BindConfiguration(GoogleOAuthOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
+        services
+            .AddOptions<SseOptions>()
+            .BindConfiguration(SseOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         return services;
     }

@@ -3,6 +3,7 @@ using QuizForge.Data;
 using QuizForge.Extensions;
 using QuizForge.Middleware;
 using QuizForge.Providers;
+using QuizForge.Realtime;
 using QuizForge.Repositories;
 using QuizForge.Services;
 
@@ -30,6 +31,7 @@ builder.Services.AddScoped<IExtractionRepository, ExtractionRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddSingleton<ISseHub, SseHub>();
 
 var app = builder.Build();
 
